@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtest IQF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fundo: #e9edf2;
+    --slide: #ffffff;
+    --tinta: #111827;
+    --tinta-2: #4b5563;
+    --linha: #dde3ea;
+    --estrategia: #2a78d6;
+    --ibov: #eb6834;
+    --conservador: #1baf7a;
+    --agressivo: #c98500;
+    --cdi: #6b7280;
+    --bom: #15803d;
+    --ruim: #b91c1c;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--fundo); color: var(--tinta); font-family: var(--sans); font-size: 18px; line-height: 1.5; }
+  .slide {
+    scroll-snap-align: start; min-height: 100vh; padding: 3vh 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .folha {
+    width: min(1180px, 100%); min-height: min(86vh, 664px); background: var(--slide);
+    border-radius: 10px; box-shadow: 0 1px 2px rgba(17,24,39,.06), 0 8px 30px rgba(17,24,39,.07);
+    padding: clamp(24px, 4vw, 56px); display: flex; flex-direction: column; gap: 22px; position: relative;
+  }
+  .num { position: absolute; right: clamp(24px, 4vw, 56px); bottom: 18px; font-size: 13px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  .rotulo { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--estrategia); }
+  h1, h2 { font-family: var(--serif); font-weight: 600; margin: 0; text-wrap: balance; line-height: 1.15; }
+  h1 { font-size: clamp(34px, 5vw, 58px); }
+  h2 { font-size: clamp(26px, 3.2vw, 38px); }
+  p { margin: 0; max-width: 68ch; }
+  .sub { color: var(--tinta-2); font-size: 20px; }
+  .duas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 28px; align-items: start; flex: 1; }
+  .duas.larga-esq { grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1.4fr)) ; }
+  ul.pontos { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 12px; }
+  ul.pontos li { max-width: 62ch; }
+  ul.pontos li::marker { color: var(--tinta-2); }
+  b { font-weight: 700; }
+  img.grafico { width: 100%; height: auto; border: 1px solid var(--linha); border-radius: 6px; display: block; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: 14px; }
+  .kpi { border: 1px solid var(--linha); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi .v { font-family: var(--serif); font-size: 34px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .kpi .n { font-size: 13px; color: var(--tinta-2); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .kpi .d { font-size: 14px; color: var(--tinta-2); }
+  .kpi.destaque { border-color: var(--estrategia); box-shadow: inset 0 0 0 1px var(--estrategia); }
+  .tabela { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 16px; }
+  th, td { padding: 8px 12px; border-bottom: 1px solid var(--linha); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--tinta-2); font-weight: 600; }
+  tr.forte td { font-weight: 700; }
+  .bom { color: var(--bom); }
+  .ruim { color: var(--ruim); }
+  .resposta { display: inline-block; font-weight: 700; padding: 2px 10px; border-radius: 999px; font-size: 15px; margin-left: 8px; vertical-align: middle; }
+  .resposta.sim { background: #dcfce7; color: var(--bom); }
+  .resposta.nao { background: #fee2e2; color: var(--ruim); }
+  .resposta.meio { background: #fef3c7; color: #92400e; }
+  .barras { display: flex; flex-direction: column; gap: 14px; }
+  .barra { display: grid; grid-template-columns: 9.5rem 1fr 5.5rem; align-items: center; gap: 12px; }
+  .barra .eixo { position: relative; height: 26px; background: linear-gradient(90deg, transparent calc(50% - 1px), var(--tinta-2) calc(50% - 1px), var(--tinta-2) calc(50% + 1px), transparent calc(50% + 1px)); }
+  .barra .eixo span { position: absolute; top: 3px; height: 20px; border-radius: 3px; }
+  .barra .val { font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+  .regua { display: grid; grid-template-columns: 9.5rem 1fr 5.5rem; gap: 12px; font-size: 13px; color: var(--tinta-2); }
+  .regua div:nth-child(2) { display: flex; justify-content: space-between; }
+  .nota { font-size: 14px; color: var(--tinta-2); }
+  .capa { justify-content: center; gap: 28px; background: linear-gradient(135deg, #ffffff 55%, #eaf2fc); }
+  .capa .linha-cor { display: flex; gap: 6px; }
+  .capa .linha-cor span { width: 44px; height: 6px; border-radius: 3px; }
+  .lista-perg { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 14px; }
+  .perg { border: 1px solid var(--linha); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .perg h3 { margin: 0; font-size: 17px; }
+  nav.controle { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; z-index: 5; }
+  nav.controle button { font: inherit; font-size: 15px; border: 1px solid var(--linha); background: #fff; color: var(--tinta); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  nav.controle button:focus-visible { outline: 2px solid var(--estrategia); outline-offset: 2px; }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .barra, .regua { grid-template-columns: 6.5rem 1fr 4.5rem; }
+    .kpi .v { font-size: 28px; }
+    nav.controle { display: none; }
+  }
+  @media print {
+    html { scroll-snap-type: none; }
+    body { background: #fff; }
+    .slide { min-height: auto; page-break-after: always; padding: 0; }
+    .folha { box-shadow: none; min-height: auto; }
+    nav.controle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="slide" id="s1"><div class="folha capa">
+  <div class="linha-cor"><span style="background:var(--estrategia)"></span><span style="background:var(--conservador)"></span><span style="background:var(--agressivo)"></span><span style="background:var(--ibov)"></span></div>
+  <h1>Backtest IQF</h1>
+  <p class="sub">Uma estratégia de fatores na B3, de janeiro de 2010 a outubro de 2026: o que ela rendeu e, principalmente, por quê.</p>
+  <p class="nota">Use as setas do teclado, Page Down ou role a página.</p>
+</div></section>
+
+<section class="slide" id="s2"><div class="folha">
+  <span class="rotulo">A estratégia</span>
+  <h2>Dois blocos sobre as 100 ações mais líquidas</h2>
+  <div class="duas">
+    <div class="perg">
+      <h3 style="color:var(--conservador)">60% Conservador: Quality + Low Vol</h3>
+      <p>As 15 ações com a melhor nota média entre ROE alto e volatilidade baixa nos últimos 12 meses. O ROE é usado com 90 dias de atraso, para só usar balanços já publicados. Troca a cada trimestre.</p>
+    </div>
+    <div class="perg">
+      <h3 style="color:var(--agressivo)">40% Agressivo: Size + Momentum</h3>
+      <p>Das 30 menores empresas do universo, as 10 que mais subiram de 12 meses atrás até 1 mês atrás. Troca todo mês.</p>
+    </div>
+  </div>
+  <ul class="pontos">
+    <li>Pesos iguais dentro de cada bloco e custo de 0,1% em cada rebalanceamento.</li>
+    <li><b>Regra do trabalho:</b> a estratégia foi definida antes e não foi ajustada para dar certo. O objetivo é explicar o resultado, bom ou ruim.</li>
+  </ul>
+  <span class="num">2</span>
+</div></section>
+
+<section class="slide" id="s3"><div class="folha">
+  <span class="rotulo">O resultado</span>
+  <h2>Ganhou do Ibovespa, perdeu para o CDI</h2>
+  <div class="kpis">
+    <div class="kpi destaque"><span class="n">Estratégia</span><span class="v">9,07%</span><span class="d">ao ano, com custo</span></div>
+    <div class="kpi"><span class="n">CDI</span><span class="v">9,79%</span><span class="d">ao ano, sem risco</span></div>
+    <div class="kpi"><span class="n">Ibovespa</span><span class="v">6,21%</span><span class="d">ao ano</span></div>
+    <div class="kpi"><span class="n">Pior queda</span><span class="v ruim">−47,5%</span><span class="d">do topo ao fundo</span></div>
+  </div>
+  <img class="grafico" src="graficos/1_curva_acumulada.png" alt="Curva acumulada em escala log: R$ 1 virou 7,3x no Conservador, 4,8x no CDI, 4,3x na estratégia, 2,7x no Ibovespa e 2,1x no Agressivo.">
+  <span class="num">3</span>
+</div></section>
+
+<section class="slide" id="s4"><div class="folha">
+  <span class="rotulo">As duas réguas</span>
+  <h2>Sharpe responde ao CDI; beta, alfa e IR respondem ao Ibovespa</h2>
+  <div class="duas">
+    <div class="perg">
+      <h3>Contra o CDI: valeu correr risco?</h3>
+      <p><b>Sharpe</b> = retorno acima do CDI dividido pela volatilidade. Perto de zero quer dizer que o risco não foi pago.</p>
+      <p>Estratégia: <b>0,07</b>. Conservador: <b>0,24</b>. Ibovespa: <b class="ruim">−0,03</b>.</p>
+    </div>
+    <div class="perg">
+      <h3>Contra o Ibovespa: valeu escolher ações?</h3>
+      <p><b>Beta</b> = quanto anda junto com o índice. <b>Alfa</b> = o que sobra por ano além do beta. <b>IR</b> = ganho sobre o índice dividido pela distância dele.</p>
+      <p>Estratégia: beta <b>0,75</b>, alfa <b class="bom">+1,9%</b> ao ano, IR <b>0,18</b>.</p>
+    </div>
+  </div>
+  <div class="tabela"><table>
+    <thead><tr><th>Série</th><th>CAGR</th><th>Vol.</th><th>Pior queda</th><th>Sharpe</th><th>Beta</th><th>Alfa</th><th>IR</th></tr></thead>
+    <tbody>
+      <tr class="forte"><td>Estratégia com custo</td><td>9,1%</td><td>20,2%</td><td>−47,5%</td><td>0,07</td><td>0,75</td><td>+1,9%</td><td>0,18</td></tr>
+      <tr><td>Conservador</td><td>12,6%</td><td>17,0%</td><td>−37,8%</td><td>0,24</td><td>0,62</td><td>+4,5%</td><td>0,37</td></tr>
+      <tr><td>Agressivo</td><td>4,6%</td><td>28,8%</td><td>−63,6%</td><td>−0,03</td><td>0,95</td><td>−0,1%</td><td>0,00</td></tr>
+      <tr><td>Ibovespa</td><td>6,2%</td><td>22,9%</td><td>−48,6%</td><td>−0,03</td><td>1,00</td><td>—</td><td>—</td></tr>
+      <tr><td>CDI</td><td>9,8%</td><td>0,2%</td><td>0,0%</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <span class="num">4</span>
+</div></section>
+
+<section class="slide" id="s5"><div class="folha">
+  <span class="rotulo">Por quê, contra o Ibovespa</span>
+  <h2>Quase toda a vantagem vem do bloco Conservador</h2>
+  <p>A diferença para o Ibovespa, em média por ano, quebrada em quatro partes:</p>
+  <div class="barras" role="img" aria-label="Conservador +2,8 pontos, peso igual +1,0, Agressivo −0,5, custo −0,8; total +2,6 pontos por ano.">
+    <div class="regua"><div></div><div><span>−3 p.p.</span><span>0</span><span>+3 p.p.</span></div><div></div></div>
+    <div class="barra"><span>Conservador</span><div class="eixo"><span style="left:50%;width:46.3%;background:var(--conservador)"></span></div><span class="val bom">+2,8 p.p.</span></div>
+    <div class="barra"><span>Peso igual</span><div class="eixo"><span style="left:50%;width:16.2%;background:#7c6fd6"></span></div><span class="val bom">+1,0 p.p.</span></div>
+    <div class="barra"><span>Agressivo</span><div class="eixo"><span style="left:42.5%;width:7.5%;background:var(--agressivo)"></span></div><span class="val ruim">−0,5 p.p.</span></div>
+    <div class="barra"><span>Custo</span><div class="eixo"><span style="left:37%;width:13%;background:var(--cdi)"></span></div><span class="val ruim">−0,8 p.p.</span></div>
+    <div class="barra"><span><b>Total</b></span><div class="eixo"><span style="left:50%;width:43.7%;background:var(--estrategia)"></span></div><span class="val bom">+2,6 p.p.</span></div>
+  </div>
+  <ul class="pontos">
+    <li><b>Conservador:</b> beta baixo (0,62). Cai menos nos anos ruins (2015, 2021, 2022, 2024) e fica para trás nas altas fortes (2016, 2017, 2020). É o comportamento esperado de low vol e quality.</li>
+    <li><b>Peso igual:</b> ajudou até 2019, quando as 100 mais líquidas com peso igual bateram um Ibovespa concentrado em poucas grandes. Desde 2022 são as grandes que sobem, e o efeito virou contra.</li>
+    <li><b>Agressivo:</b> não acrescentou retorno, só risco: alfa zero, beta perto de 1 e a maior volatilidade (28,8%).</li>
+  </ul>
+  <p class="nota">Média simples dos 17 anos; a soma das partes é aproximada porque os retornos se compõem.</p>
+  <span class="num">5</span>
+</div></section>
+
+<section class="slide" id="s6"><div class="folha">
+  <span class="rotulo">Por quê, contra o CDI</span>
+  <h2>O resultado depende da fase dos juros</h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Fase</th><th>Estratégia</th><th>Conservador</th><th>Agressivo</th><th>Ibovespa</th><th>CDI</th><th>O que aconteceu</th></tr></thead>
+    <tbody>
+      <tr><td>2010–2013</td><td class="bom">12,2%</td><td class="bom">13,8%</td><td class="bom">10,6%</td><td class="ruim">−7,4%</td><td>9,3%</td><td style="text-align:left">Ibovespa cai puxado pelas maiores empresas</td></tr>
+      <tr><td>2014–2016</td><td class="ruim">2,4%</td><td class="ruim">10,2%</td><td class="ruim">−7,3%</td><td class="ruim">5,4%</td><td>12,5%</td><td style="text-align:left">Recessão, Selic acima de 14%</td></tr>
+      <tr><td>2017–2019</td><td class="bom">27,3%</td><td class="bom">22,7%</td><td class="bom">35,9%</td><td class="bom">24,5%</td><td>7,3%</td><td style="text-align:left">Juros caindo, bolsa subindo</td></tr>
+      <tr><td>2020–2022</td><td class="ruim">−3,7%</td><td class="ruim">−0,6%</td><td class="ruim">−8,7%</td><td class="ruim">−1,7%</td><td>6,4%</td><td style="text-align:left">Covid e Selic de 2% para quase 14%</td></tr>
+      <tr><td>2023–2026</td><td class="ruim">8,8%</td><td class="bom">17,1%</td><td class="ruim">−2,0%</td><td class="bom">16,0%</td><td>13,0%</td><td style="text-align:left">Juros altos</td></tr>
+    </tbody>
+  </table></div>
+  <p class="nota">Retorno ao ano em cada fase. Verde: acima do CDI do período; vermelho: abaixo.</p>
+  <ul class="pontos">
+    <li>A estratégia só bateu o CDI com folga quando os juros caíram (2017–2019). Com juros altos, o CDI é difícil de bater com 75% do risco da bolsa.</li>
+    <li>O Agressivo sofre justamente nas fases de juros altos. <b>Hipótese a testar:</b> empresas pequenas dependem mais de crédito e sofrem mais com a Selic.</li>
+    <li>No período inteiro, nem o Ibovespa pagou o risco: rendeu 6,2% ao ano contra 9,8% do CDI.</li>
+  </ul>
+  <span class="num">6</span>
+</div></section>
+
+<section class="slide" id="s7"><div class="folha">
+  <span class="rotulo">Ano a ano</span>
+  <h2>Acima do CDI em 8 de 17 anos, acima do Ibovespa em 10</h2>
+  <img class="grafico" src="graficos/3_retorno_anual.png" alt="Retorno por ano da estratégia com custo, do Ibovespa e do CDI, de 2010 a 2026.">
+  <p class="nota">2026 vai até 2 de outubro.</p>
+  <span class="num">7</span>
+</div></section>
+
+<section class="slide" id="s8"><div class="folha">
+  <span class="rotulo">Antes de dizer que funciona · 1</span>
+  <h2>Foi sorte? Não dá para descartar <span class="resposta nao">t = 0,28</span></h2>
+  <p>A estatística t do Sharpe é o Sharpe vezes a raiz dos anos de dados. O corte usual para dizer que não é só sorte é t = 2.</p>
+  <div class="tabela"><table>
+    <thead><tr><th>Série</th><th>Sharpe</th><th>t</th><th>Anos de dados</th><th>Anos para t = 2</th></tr></thead>
+    <tbody>
+      <tr class="forte"><td>Estratégia com custo</td><td>0,07</td><td>0,28</td><td>16,7</td><td>~830</td></tr>
+      <tr><td>Conservador</td><td>0,24</td><td>0,97</td><td>16,7</td><td>~70</td></tr>
+      <tr><td>Agressivo</td><td>−0,03</td><td>−0,11</td><td>16,7</td><td>—</td></tr>
+      <tr><td>Ibovespa</td><td>−0,03</td><td>−0,13</td><td>16,7</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="pontos">
+    <li>Nenhuma série chega perto de t = 2. Com um Sharpe tão baixo, nem séculos de dados bastariam.</li>
+    <li>Por outro lado, a estratégia não foi escolhida entre várias versões, então não há o viés de ficar com a melhor tentativa.</li>
+  </ul>
+  <span class="num">8</span>
+</div></section>
+
+<section class="slide" id="s9"><div class="folha">
+  <span class="rotulo">Antes de dizer que funciona · 2</span>
+  <h2>Mudando o parâmetro, o resultado aguenta? <span class="resposta meio">aguenta, mas baixo</span></h2>
+  <div class="duas larga-esq">
+    <img class="grafico" src="graficos/7_robustez.png" alt="Sharpe com custo para janelas de momentum de 3, 6, 9 e 12 meses com rebalanceamento mensal e trimestral: valores entre −0,03 e 0,22; a oficial, 12 meses mensal, tem 0,07.">
+    <ul class="pontos">
+      <li><b>Nenhuma combinação se destaca:</b> o Sharpe fica entre −0,03 e 0,22. Não há combinação mágica, que é o padrão robusto da aula. Mas nenhuma versão paga bem o risco.</li>
+      <li><b>O trimestral fica à frente em todas as janelas.</b> Girar menos paga menos custo, mas isso explica só uma parte. Hipótese: o momentum de empresas pequenas funciona melhor segurando os vencedores por mais tempo.</li>
+      <li><b>A oficial (12 meses, mensal) está entre as piores.</b> Mais um sinal de que não foi escolhida pelo resultado. Ela continua a oficial; a grade só serve para explicar.</li>
+    </ul>
+  </div>
+  <span class="num">9</span>
+</div></section>
+
+<section class="slide" id="s10"><div class="folha">
+  <span class="rotulo">Antes de dizer que funciona · 3</span>
+  <h2>Descontei os custos? <span class="resposta sim">sim</span></h2>
+  <div class="tabela"><table>
+    <thead><tr><th>Cenário</th><th>Regra</th><th>Custo ao ano</th><th>CAGR</th><th>Sharpe</th></tr></thead>
+    <tbody>
+      <tr><td>Sem custo</td><td>—</td><td>0,00%</td><td>9,86%</td><td>0,11</td></tr>
+      <tr class="forte"><td>Custo oficial</td><td>0,1% por rebalanceamento</td><td>0,79%</td><td>9,07%</td><td>0,07</td></tr>
+      <tr><td>Custo da aula</td><td>0,2% sobre o que é trocado</td><td>1,09%</td><td>8,77%</td><td>0,06</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="pontos">
+    <li>A carteira gira cerca de <b>5 vezes o próprio valor por ano</b>, quase tudo no bloco Agressivo, que troca todo mês.</li>
+    <li>Pela regra da aula o custo sobe um pouco, mas a conclusão não muda: abaixo do CDI e acima do Ibovespa.</li>
+  </ul>
+  <span class="num">10</span>
+</div></section>
+
+<section class="slide" id="s11"><div class="folha">
+  <span class="rotulo">Conclusão</span>
+  <h2>Por que deu o que deu</h2>
+  <div class="lista-perg">
+    <div class="perg"><h3>Ganhou do CDI? <span class="resposta nao">não</span></h3><p>9,07% contra 9,79% ao ano, com 20% de volatilidade e queda de 47%. Num período em que nem a bolsa pagou o risco, carregar 75% do risco do mercado pesou.</p></div>
+    <div class="perg"><h3>Ganhou do Ibovespa? <span class="resposta sim">sim</span></h3><p>+2,6 pontos por ano, quase tudo do bloco Conservador e do peso igual até 2019. Desde 2023 perde para o índice.</p></div>
+    <div class="perg"><h3>É sorte? <span class="resposta nao">não dá para saber</span></h3><p>t = 0,28. Com 16,7 anos de dados e um Sharpe tão baixo, o resultado é compatível com acaso.</p></div>
+    <div class="perg"><h3>É robusto? <span class="resposta meio">sim, mas fraco</span></h3><p>Todas as variações dão resultados parecidos e baixos; a oficial não é a melhor delas.</p></div>
+  </div>
+  <ul class="pontos">
+    <li><b>O que funcionou:</b> o bloco Conservador, com alfa de 4,5% ao ano contra o Ibovespa.</li>
+    <li><b>O que não funcionou:</b> o bloco Agressivo, que acrescentou risco sem retorno.</li>
+    <li><b>Próximos passos:</b> testar a hipótese de juros contra small caps e classificar os 25% da carteira que estão sem setor.</li>
+  </ul>
+  <span class="num">11</span>
+</div></section>
+
+<section class="slide" id="s12"><div class="folha">
+  <span class="rotulo">Apêndice</span>
+  <h2>Como foi medido</h2>
+  <ul class="pontos">
+    <li><b>Dados:</b> preços ajustados, ROE, valor de mercado e negociabilidade do Economatica; Ibovespa e setores do Yahoo Finance; CDI diário do Banco Central (série 12 do SGS).</li>
+    <li><b>Período:</b> 5 de janeiro de 2010 a 2 de outubro de 2026, com 201 rebalanceamentos e entre 23 e 25 ações na carteira.</li>
+    <li><b>Correção de medição:</b> o Economatica traz feriados como linhas vazias. Sem tirar essas linhas, 15 meses inteiros sumiam do resultado, inclusive o crash de março de 2020, e o resultado parecia melhor do que foi.</li>
+    <li><b>Ferramentas:</b> Python (pandas, numpy, matplotlib) e QuantStats para o relatório completo (<code>relatorio_quantstats.html</code>).</li>
+    <li><b>Para reproduzir:</b> <code>pip install -r requirements.txt</code> e <code>python backtest.py</code>.</li>
+  </ul>
+  <span class="num">12</span>
+</div></section>
+
+<nav class="controle" aria-label="Navegar entre slides">
+  <button type="button" id="ant" aria-label="Slide anterior">↑</button>
+  <button type="button" id="prox" aria-label="Próximo slide">↓</button>
+</nav>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const atual = () => {
+    const meio = window.scrollY + window.innerHeight / 2;
+    return Math.max(0, slides.findIndex((s) => s.offsetTop + s.offsetHeight > meio));
+  };
+  const ir = (i) => slides[Math.min(slides.length - 1, Math.max(0, i))].scrollIntoView();
+  document.getElementById('ant').addEventListener('click', () => ir(atual() - 1));
+  document.getElementById('prox').addEventListener('click', () => ir(atual() + 1));
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', ' '].includes(e.key)) { e.preventDefault(); ir(atual() + 1); }
+    if (['ArrowLeft', 'ArrowUp'].includes(e.key)) { e.preventDefault(); ir(atual() - 1); }
+  });
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ Backtest de uma carteira 60% **Conservador** (Quality + Low Vol) e 40% **Agressi
 **Regra do projeto:** a estratégia não é ajustada para dar certo. Ela pode dar certo
 ou errado; o trabalho é explicar **por que** deu o resultado que deu. Corrigir erros
 de medição e acrescentar análises pode; mudar parâmetros para melhorar o número, não.
-Detalhes em [CLAUDE.md](CLAUDE.md).
+Testes de sensibilidade (outros pesos, outros parâmetros) servem só para explicar.
 
 ## Como rodar
 
@@ -24,6 +24,7 @@ A execução leva cerca de 1 minuto, porque roda a grade de robustez (8 versões
 
 | Arquivo | O que é |
 |---|---|
+| `apresentacao.html` | Mini apresentação dos resultados e das explicações |
 | `relatorio_quantstats.html` | Relatório completo do QuantStats (abra no navegador) contra o Ibovespa, `rf` = CDI médio |
 | `graficos/*.png` | Curva acumulada, drawdown, retorno anual, retorno acima do CDI, teste de pesos, setores, grade de robustez |
 | `resultados/*.csv` | Tabelas usadas no painel: medidas, curva, retorno anual, decomposição, fases, setores, sorte, custos, robustez |
@@ -54,9 +55,11 @@ A execução leva cerca de 1 minuto, porque roda a grade de robustez (8 versões
 
 Esses testes não mudam a estratégia oficial (momentum 12m, rebal mensal, 60/40); servem para explicar o resultado.
 
-## Painel de resultados
+## Apresentação
 
-https://claude.ai/artifact/XwJRoutBYw7JDfinwLSKDC (privado do dono; os dados dele são os CSVs de `resultados/`).
+`apresentacao.html` resume os resultados e as explicações em 12 slides. Abra no navegador
+a partir da pasta do repositório (as imagens vêm de `graficos/`). Os números são da execução
+de 03/11/2026; se o backtest mudar, atualize os slides.
 
 ## Armadilhas conhecidas
 
