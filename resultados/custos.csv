@@ -1,0 +1,4 @@
+cenario,regra,cagr,sharpe,custo_ano
+Sem custo,nenhum,0.09861,0.1056,0.0
+Custo oficial,"0,1% por rebalanceamento",0.09073,0.06944,0.00788
+Custo da aula,"0,2% x giro",0.08767,0.05534,0.01094

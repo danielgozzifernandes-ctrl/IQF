@@ -1,0 +1,9 @@
+momentum,rebal,sharpe,cagr,oficial,chave
+3m,Mensal,-0.0265,0.0696,False,3m Mensal
+3m,Trimestral,0.0781,0.0922,False,3m Trimestral
+6m,Mensal,0.1215,0.1021,False,6m Mensal
+6m,Trimestral,0.2143,0.1227,False,6m Trimestral
+9m,Mensal,0.114,0.1003,False,9m Mensal
+9m,Trimestral,0.2204,0.1241,False,9m Trimestral
+12m,Mensal,0.0694,0.0907,True,12m Mensal
+12m,Trimestral,0.1485,0.1081,False,12m Trimestral

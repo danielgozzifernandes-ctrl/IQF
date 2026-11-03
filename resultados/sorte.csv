@@ -1,0 +1,6 @@
+serie,sharpe,t,anos_dados,anos_precisa
+Estrategia com custo,0.0694,0.2841,16.7392,829.6152
+Conservador,0.2382,0.9746,16.7392,70.4904
+Agressivo,-0.0258,-0.1055,16.7392,
+Universo,-0.0194,-0.0793,16.7392,
+Ibovespa,-0.0316,-0.1293,16.7392,
